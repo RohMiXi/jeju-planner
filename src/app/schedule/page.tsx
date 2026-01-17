@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from "react"
@@ -52,53 +51,58 @@ export default function SchedulePage() {
     }, [day, optionType])
 
     return (
-        <div className="flex flex-col min-h-screen bg-white">
-            {/* Header with Day Selection */}
-            <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b px-4 py-3 shadow-sm">
-                <div className="flex items-center justify-between mb-3">
-                    <h1 className="text-xl font-bold bg-gradient-to-r from-[#0077B6] to-blue-500 bg-clip-text text-transparent">
-                        Jeju Travel Hub 🍊
+        <div className="flex flex-col min-h-screen bg-[#F7F3F2] relative overflow-hidden">
+            {/* Exact Background Gradient Image from User */}
+            <div className="absolute top-0 left-0 right-0 z-0 flex justify-center">
+                <img
+                    src="/top-gradient.png"
+                    alt="Background Gradient"
+                    className="w-full max-w-[600px] h-auto object-cover opacity-90"
+                />
+            </div>
+
+            {/* Header */}
+            <header className="sticky top-0 z-40 pt-10 pb-4 px-6 relative">
+                <div className="flex justify-between items-center mb-8">
+                    <h1 className="text-[32px] font-bold tracking-tight text-[#1D1D1F]">
+                        여행 일정
                     </h1>
                 </div>
 
-                <Tabs defaultValue="1" value={day.toString()} onValueChange={(v) => setDay(parseInt(v))} className="w-full">
-                    <TabsList className="grid w-full grid-cols-3">
-                        <TabsTrigger value="1">Day 1</TabsTrigger>
-                        <TabsTrigger value="2">Day 2</TabsTrigger>
-                        <TabsTrigger value="3">Day 3</TabsTrigger>
-                    </TabsList>
-                </Tabs>
-
-                {day === 1 && (
-                    <div className="flex items-center justify-end space-x-2 mt-3 pt-2 border-t border-gray-100">
-                        <Label htmlFor="option-mode" className="text-sm font-medium text-gray-600">
-                            {optionType === 'A' ? 'A안 (액티비티)' : 'B안 (양조장)'}
-                        </Label>
-                        <Switch
-                            id="option-mode"
-                            checked={optionType === 'B'}
-                            onCheckedChange={(checked) => setOptionType(checked ? 'B' : 'A')}
-                        />
-                    </div>
-                )}
+                {/* Day Selector (Tabs Style) */}
+                <div className="flex justify-between gap-3 mb-4">
+                    {[1, 2, 3].map((d) => (
+                        <button
+                            key={d}
+                            onClick={() => setDay(d)}
+                            className={`flex flex-col items-center justify-center flex-1 py-3 rounded-xl transition-all duration-300 border ${day === d
+                                ? "date-card-active"
+                                : "bg-transparent border-transparent text-gray-400 hover:bg-white/40"
+                                }`}
+                        >
+                            <span className="text-[11px] font-medium mb-0.5">Day</span>
+                            <span className={`text-xl font-bold ${day === d ? "text-[#1D1D1F]" : "text-gray-400"}`}>{d}</span>
+                        </button>
+                    ))}
+                </div>
             </header>
 
             {/* Schedule List */}
-            <main className="flex-1 px-4 py-6 pb-24">
+            <main className="flex-1 px-5 py-2 pb-32 relative z-10">
                 {loading ? (
                     <div className="flex justify-center items-center h-40">
-                        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
                 ) : schedules.length > 0 ? (
-                    <div className="space-y-2">
+                    <div className="space-y-4 px-1">
                         {schedules.map((schedule, index) => (
                             <ScheduleItem key={schedule.id} schedule={schedule} index={index} />
                         ))}
                     </div>
                 ) : (
-                    <div className="text-center py-10 text-gray-400">
-                        <p>일정이 없습니다.</p>
-                        <p className="text-xs mt-2">DB 연결을 확인해주세요.</p>
+                    <div className="text-center py-20 text-gray-300">
+                        <div className="text-4xl mb-4">📅</div>
+                        <p className="font-medium">등록된 일정이 없습니다</p>
                     </div>
                 )}
             </main>

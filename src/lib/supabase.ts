@@ -15,7 +15,7 @@ export const supabase = isMock ? null : createClient(supabaseUrl, supabaseAnonKe
 
 // Types for our database
 export type Schedule = {
-    id: string
+    id: number
     day_number: number
     option_type: 'A' | 'B' | null
     start_time: string

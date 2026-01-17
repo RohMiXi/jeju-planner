@@ -48,12 +48,25 @@ export default function NaverMap({ center, markers = [], path = [] }: MapProps) 
             mapRef.current = map
 
             if (path.length > 0) {
-                new window.naver.maps.Polyline({
+                const polyline = new window.naver.maps.Polyline({
                     map: map,
                     path: path.map(p => new window.naver.maps.LatLng(p.lat, p.lng)),
-                    strokeColor: '#0077B6',
-                    strokeWeight: 5,
-                    strokeOpacity: 0.8
+                    strokeColor: '#00C73C', // Standard Green for Path
+                    strokeWeight: 6,
+                    strokeOpacity: 0.8,
+                    strokeLineCap: 'round',
+                    strokeLineJoin: 'round',
+                    zIndex: 100
+                });
+
+                // Auto-fit bounds to show the whole path
+                const bounds = new window.naver.maps.LatLngBounds();
+                path.forEach(p => {
+                    bounds.extend(new window.naver.maps.LatLng(p.lat, p.lng));
+                });
+                map.fitBounds(bounds, {
+                    // Optional padding
+                    top: 50, bottom: 50, left: 50, right: 50
                 });
             }
 
@@ -112,7 +125,7 @@ export default function NaverMap({ center, markers = [], path = [] }: MapProps) 
             <Script
                 strategy="afterInteractive"
                 type="text/javascript"
-                src={`https://oapi.map.naver.com/openapi/v3/maps.js?ncpClientId=${clientId}`}
+                src={`https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${clientId}`}
                 referrerPolicy="origin"
                 onReady={() => setLoaded(true)}
             />

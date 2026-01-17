@@ -1,4 +1,3 @@
-
 "use client"
 
 import Link from "next/link"
@@ -9,6 +8,9 @@ import { cn } from "@/lib/utils"
 export function MobileNav() {
     const pathname = usePathname()
 
+    // Hide on profile selection screen or chat screen
+    if (pathname === "/" || pathname === "/chat") return null
+
     const links = [
         { href: "/schedule", label: "일정", icon: Calendar },
         { href: "/map", label: "지도", icon: Map },
@@ -17,8 +19,8 @@ export function MobileNav() {
     ]
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 border-t bg-background z-50 pb-safe">
-            <div className="flex justify-around items-center h-16">
+        <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-50 bg-white/90 backdrop-blur-md border-t border-gray-100 pb-safe">
+            <div className="flex justify-between items-center px-4 h-16">
                 {links.map((link) => {
                     const Icon = link.icon
                     const isActive = pathname === link.href || (pathname === "/" && link.href === "/schedule")
@@ -28,14 +30,14 @@ export function MobileNav() {
                             key={link.href}
                             href={link.href}
                             className={cn(
-                                "flex flex-col items-center justify-center flex-1 h-full gap-1 text-xs font-medium transition-colors",
+                                "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors duration-200",
                                 isActive
-                                    ? "text-[#0077B6]"
-                                    : "text-muted-foreground hover:text-foreground"
+                                    ? "text-primary"
+                                    : "text-gray-400 hover:text-gray-600"
                             )}
                         >
-                            <Icon className="w-6 h-6" />
-                            <span>{link.label}</span>
+                            <Icon className={cn("w-6 h-6", isActive && "fill-current")} strokeWidth={isActive ? 2.5 : 2} />
+                            <span className="text-[10px] font-medium">{link.label}</span>
                         </Link>
                     )
                 })}

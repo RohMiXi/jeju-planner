@@ -1,5 +1,4 @@
 
-import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Clock, MapPin, ChevronRight } from "lucide-react"
 import { Schedule } from "@/lib/supabase"
@@ -7,55 +6,61 @@ import { Schedule } from "@/lib/supabase"
 interface ScheduleItemProps {
     schedule: Schedule
     index: number
+    isActive?: boolean
+    isPrimary?: boolean
 }
 
-export function ScheduleItem({ schedule, index }: ScheduleItemProps) {
+export function ScheduleItem({ schedule, index, isActive, isPrimary }: ScheduleItemProps) {
     // Simple time formatter
     const formatTime = (time: string) => {
         return time.substring(0, 5)
     }
 
     return (
-        <div className="relative pl-6 pb-6 last:pb-0">
-            {/* Timeline line */}
-            <div className="absolute left-[11px] top-6 bottom-0 w-[2px] bg-gray-200 last:hidden" />
+        <div className="relative pl-6 pb-2 last:pb-0 group isolate">
+            {/* Timeline Line */}
+            <div className="absolute left-[7px] top-2 bottom-0 w-[2px] bg-gray-200 -z-10" />
 
             {/* Timeline dot */}
-            <div className="absolute left-0 top-6 w-6 h-6 rounded-full bg-[#0077B6] text-white flex items-center justify-center text-xs font-bold z-10 border-2 border-white shadow-sm">
-                {index + 1}
-            </div>
+            <div
+                className={`absolute left-0 top-0 w-4 h-4 rounded-full border-2 z-20 transition-colors ${isActive ? "border-[#FF8D28] bg-[#FF8D28]" : "border-[#FF8D28] bg-white"
+                    }`}
+            />
 
-            <Card className="ml-4 hover:shadow-md transition-shadow cursor-pointer active:scale-[0.98] transition-transform">
-                <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center text-sm font-medium text-muted-foreground">
-                            <Clock className="w-3.5 h-3.5 mr-1" />
-                            {formatTime(schedule.start_time)} - {formatTime(schedule.end_time)}
+            {/* Content */}
+            <div className={`ml-3 transition-all duration-300 ${isActive ? "translate-x-1" : ""}`}>
+                <div className={`schedule-card overflow-hidden ${isActive ? "active ring-2 ring-orange-100" : ""}`}>
+                    <div className="p-4 flex flex-col gap-4">
+                        {/* Time */}
+                        <div className="text-[14px] font-bold text-[#FF8D28] leading-none">
+                            {formatTime(schedule.start_time)}
+                            {isPrimary && <span className="ml-2 text-[10px] text-white bg-[#FF8D28] px-2 py-0.5 rounded-full align-top">도착</span>}
                         </div>
-                        {schedule.purpose && (
-                            <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 border-none">
-                                {schedule.purpose}
-                            </Badge>
+
+                        {/* Title & Subtitle Group */}
+                        <div className="flex flex-col gap-2">
+                            {/* Title */}
+                            <h3 className="text-[17px] font-bold text-[#1D1D1F] leading-tight">
+                                {schedule.location}
+                            </h3>
+
+                            {/* Purpose / Subtitle */}
+                            {schedule.purpose && (
+                                <div className="text-[14px] text-gray-500 font-medium leading-tight">
+                                    {schedule.purpose}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Remarks Box */}
+                        {schedule.remarks && (
+                            <div className="bg-[#F7F3F2] rounded-xl px-4 py-3 text-[13px] text-gray-600 font-medium leading-relaxed">
+                                {schedule.remarks}
+                            </div>
                         )}
                     </div>
-
-                    <h3 className="font-bold text-lg mb-1">{schedule.location}</h3>
-
-                    {schedule.remarks && (
-                        <p className="text-sm text-gray-500 bg-gray-50 p-2 rounded-md mt-2 flex items-start">
-                            <span className="mr-2">💡</span>
-                            {schedule.remarks}
-                        </p>
-                    )}
-
-                    {/* This would link to actual map destination later */}
-                    <div className="mt-3 flex items-center text-xs text-gray-400 group">
-                        <MapPin className="w-3 h-3 mr-1" />
-                        <span>지도 보기</span>
-                        <ChevronRight className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </div>
-                </CardContent>
-            </Card>
+                </div>
+            </div>
         </div>
     )
 }
