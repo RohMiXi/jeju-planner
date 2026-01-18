@@ -79,9 +79,9 @@ export default function MapPage() {
     const [pathSegments, setPathSegments] = useState<Record<string, { lat: number; lng: number }[]>>({})
 
     // Interaction State
-    const [selectedScheduleId, setSelectedScheduleId] = useState<number | null>(null)
+    const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null)
 
-    const handleScheduleClick = (id: number) => {
+    const handleScheduleClick = (id: string) => {
         if (selectedScheduleId === id) {
             setSelectedScheduleId(null) // deselect
         } else {

@@ -8,8 +8,8 @@ import { ChevronUp, Minus } from "lucide-react"
 
 interface MapDrawerProps {
     schedules: Schedule[]
-    selectedId: number | null
-    onItemClick: (id: number) => void
+    selectedId: string | null
+    onItemClick: (id: string) => void
 }
 
 export function MapDrawer({ schedules, selectedId, onItemClick }: MapDrawerProps) {
