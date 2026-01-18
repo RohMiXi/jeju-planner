@@ -1,6 +1,15 @@
 -- Enable UUID extension
 create extension if not exists "uuid-ossp";
 
+-- Table: profiles
+create table if not exists profiles (
+  id uuid primary key default uuid_generate_v4(),
+  name text not null,
+  image_url text,
+  password text default '0000',
+  created_at timestamp with time zone default now()
+);
+
 -- Table: schedules
 create table if not exists schedules (
   id uuid primary key default uuid_generate_v4(),
@@ -13,7 +22,9 @@ create table if not exists schedules (
   remarks text,
   lat float,
   lng float,
-  created_at timestamp with time zone default now()
+  address text,
+  created_at timestamp with time zone default now(),
+  profile_id uuid references profiles(id)
 );
 
 -- Table: places_pool
@@ -23,8 +34,10 @@ create table if not exists places_pool (
   sub_category text,
   name text not null,
   naver_map_url text,
+  address text,
   description text,
-  created_at timestamp with time zone default now()
+  created_at timestamp with time zone default now(),
+  profile_id uuid references profiles(id)
 );
 
 -- Table: messages
@@ -32,7 +45,8 @@ create table if not exists messages (
   id uuid primary key default uuid_generate_v4(),
   user_name text not null,
   content text not null,
-  created_at timestamp with time zone default now()
+  created_at timestamp with time zone default now(),
+  profile_id uuid references profiles(id)
 );
 
 -- Enable Realtime for messages

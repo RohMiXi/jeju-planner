@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useRef } from "react"
 import { supabase, Place } from "@/lib/supabase"
-import { MapPin, ArrowRight } from "lucide-react"
+import { MapPin, ArrowRight, ArrowUpDown } from "lucide-react"
 import Link from 'next/link'
 import { searchImage } from "@/lib/naver-search"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 function PlaceCard({ place }: { place: Place }) {
     const [imageUrl, setImageUrl] = useState<string | null>(null)
@@ -79,7 +80,16 @@ function PlaceCard({ place }: { place: Place }) {
             <div className="flex-1 p-4 flex flex-col justify-between min-w-0">
                 <div>
                     <div className="flex justify-between items-start mb-1">
-                        <h3 className="font-bold text-base text-[#1D1D1F] truncate pr-2">{place.name}</h3>
+                        <h3 className="font-bold text-base text-[#1D1D1F] truncate pr-2 flex items-center gap-2">
+                            {place.name}
+                            {/* @ts-ignore */}
+                            {place.profiles?.name && (
+                                <span className="text-[9px] text-gray-400 font-normal border border-gray-200 px-1 rounded-sm shrink-0">
+                                    {/* @ts-ignore */}
+                                    {place.profiles.name}
+                                </span>
+                            )}
+                        </h3>
                         {place.sub_category && (
                             <span className="text-[10px] text-gray-400 shrink-0 mt-0.5">{place.sub_category}</span>
                         )}
@@ -103,6 +113,7 @@ function PlaceCard({ place }: { place: Place }) {
 export default function PlacesPage() {
     const [places, setPlaces] = useState<Place[]>([])
     const [category, setCategory] = useState("all")
+    const [sortBy, setSortBy] = useState("latest")
 
     useEffect(() => {
         async function fetchPlaces() {
@@ -110,7 +121,7 @@ export default function PlacesPage() {
 
             const { data, error } = await supabase
                 .from('places_pool')
-                .select('*')
+                .select('*, profiles(name)')
                 .order('name')
 
             if (data) setPlaces(data)
@@ -122,6 +133,21 @@ export default function PlacesPage() {
     const filteredPlaces = category === "all"
         ? places
         : places.filter(p => p.category === category)
+
+    const sortedPlaces = [...filteredPlaces].sort((a, b) => {
+        if (sortBy === 'latest') {
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        } else if (sortBy === 'name') {
+            return a.name.localeCompare(b.name, 'ko')
+        } else if (sortBy === 'author') {
+            // @ts-ignore
+            const nameA = a.profiles?.name || ''
+            // @ts-ignore
+            const nameB = b.profiles?.name || ''
+            return nameA.localeCompare(nameB, 'ko')
+        }
+        return 0
+    })
 
     const categories = [
         { id: 'all', label: '전체' },
@@ -143,10 +169,24 @@ export default function PlacesPage() {
 
             {/* Header */}
             <header className="sticky top-0 z-40 pt-10 pb-4 px-6 relative">
-                <div className="flex justify-between items-center mb-8">
+                <div className="flex justify-between items-end mb-8">
                     <h1 className="text-[32px] font-bold tracking-tight text-[#1D1D1F]">
                         추천 장소
                     </h1>
+
+                    {/* Sort Selector */}
+                    <div className="mb-1">
+                        <Select value={sortBy} onValueChange={setSortBy}>
+                            <SelectTrigger className="w-[110px] h-8 bg-white/50 backdrop-blur-sm border-0 rounded-full text-xs font-medium text-gray-700 shadow-sm">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="z-[60]">
+                                <SelectItem value="latest">최근 등록순</SelectItem>
+                                <SelectItem value="name">가나다순</SelectItem>
+                                <SelectItem value="author">추천인 순</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
 
                 {/* Category Selector (Custom Tabs) */}
@@ -169,10 +209,10 @@ export default function PlacesPage() {
             {/* Place List */}
             <main className="flex-1 px-5 py-2 pb-32 relative z-10">
                 <div className="">
-                    {filteredPlaces.map((place) => (
+                    {sortedPlaces.map((place) => (
                         <PlaceCard key={place.id} place={place} />
                     ))}
-                    {filteredPlaces.length === 0 && (
+                    {sortedPlaces.length === 0 && (
                         <div className="text-center py-20 text-gray-300">
                             <div className="text-4xl mb-4">🏝️</div>
                             <p className="font-medium">해당 카테고리의 장소가 없습니다</p>

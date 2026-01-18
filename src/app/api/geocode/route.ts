@@ -1,65 +1,51 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from 'next/server'
 
-export async function GET(request: NextRequest) {
-    const { searchParams } = new URL(request.url);
-    const query = searchParams.get("query");
+export async function GET(request: Request) {
+    const { searchParams } = new URL(request.url)
+    const query = searchParams.get('query')
 
     if (!query) {
-        return NextResponse.json(
-            { error: "Missing query parameter" },
-            { status: 400 }
-        );
+        return NextResponse.json({ error: 'Query parameter is required' }, { status: 400 })
     }
 
-    const clientId = process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID;
-    const clientSecret = process.env.NAVER_MAP_CLIENT_SECRET;
+    // Naver Maps (Cloud Platform) Client ID & Secret
+    const clientId = process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID
+    const clientSecret = process.env.NAVER_MAP_CLIENT_SECRET
+
+    console.log(`[Geocode API Debug] ClientID Loaded: ${clientId ? 'Yes' : 'No'} (${clientId?.slice(0, 2)}...)`)
+    console.log(`[Geocode API Debug] Secret Loaded: ${clientSecret ? 'Yes' : 'No'} (${clientSecret?.slice(0, 2)}...)`)
 
     if (!clientId || !clientSecret) {
-        console.error("Missing Naver Credentials");
-        return NextResponse.json(
-            { error: "Server misconfigured: Missing map credentials" },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: 'Server configuration error: Missing Keys' }, { status: 500 })
     }
 
-    // Naver Maps Geocoding API
-    // Using 'maps.apigw.ntruss.com' as it is the confirmed working host for this user's keys.
-    const baseUrl = "https://maps.apigw.ntruss.com/map-geocode/v2/geocode";
-
-    const params = new URLSearchParams({
-        query: query,
-    });
-
-    const url = `${baseUrl}?${params.toString()}`;
-
-    console.log("[API/Geocode] Requesting:", url);
+    const apiUrl = 'https://maps.apigw.ntruss.com/map-geocode/v2/geocode'
 
     try {
-        const response = await fetch(url, {
-            method: "GET",
+        console.log(`[Geocode API] Requesting for: ${query}`)
+
+        const response = await fetch(`${apiUrl}?query=${encodeURIComponent(query)}`, {
             headers: {
-                "x-ncp-apigw-api-key-id": clientId,
-                "x-ncp-apigw-api-key": clientSecret,
-                "Accept": "application/json"
+                'X-NCP-APIGW-API-KEY-ID': clientId,
+                'X-NCP-APIGW-API-KEY': clientSecret,
             },
-        });
+        })
 
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error("[API/Geocode] Error:", response.status, errorText);
-            return NextResponse.json(
-                { error: "Naver API Error", details: errorText },
-                { status: response.status }
-            );
+            const errorData = await response.json().catch(() => ({}))
+            console.error("[Geocode API] Naver API Error Status:", response.status)
+            console.error("[Geocode API] Error Body:", errorData)
+            return NextResponse.json(errorData, { status: response.status })
         }
 
-        const data = await response.json();
-        return NextResponse.json(data);
+        const data = await response.json()
+        console.log(`[Geocode API] Success. Found ${data.addresses?.length || 0} addresses.`)
+        if (data.addresses?.length === 0) {
+            console.warn("[Geocode API] No addresses found for query.")
+        }
+        return NextResponse.json(data)
     } catch (error) {
-        console.error("[API/Geocode] Internal Error:", error);
-        return NextResponse.json(
-            { error: "Internal Server Error" },
-            { status: 500 }
-        );
+        console.error("[Geocode API] Internal Server Error:", error)
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
     }
 }

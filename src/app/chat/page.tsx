@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Send, ChevronLeft } from "lucide-react"
 import Image from "next/image"
+import { useAuth } from "@/components/auth-provider"
 
 const profiles = [
     { id: 1, name: "권용근", image: "/profiles/1.png" },
@@ -17,31 +18,21 @@ const profiles = [
 
 export default function ChatPage() {
     const router = useRouter()
+    const { user } = useAuth()
     const [messages, setMessages] = useState<Message[]>([])
     const [newMessage, setNewMessage] = useState("")
-    const [userName, setUserName] = useState("")
-    const [showSelection, setShowSelection] = useState(true)
-    const [isLoading, setIsLoading] = useState(true)
 
     const messagesEndRef = useRef<HTMLDivElement>(null)
 
-    // Load initial messages and check profile
+    // Redirect if not logged in is handled by AuthContext, but double check
     useEffect(() => {
-        // Load user profile
-        const savedProfile = localStorage.getItem("user_profile")
-        if (savedProfile) {
-            const profile = JSON.parse(savedProfile)
-            setUserName(profile.name || "익명")
-            setShowSelection(false)
-        } else {
-            setShowSelection(true)
-        }
-        setIsLoading(false)
+        if (!user) return // AuthProvider will redirect
+    }, [user])
 
+    // Load initial messages
+    useEffect(() => {
         if (!supabase) return
 
-
-        // Fetch initial messages
         const fetchMessages = async () => {
             if (!supabase) return
 
@@ -57,8 +48,6 @@ export default function ChatPage() {
         fetchMessages()
 
         // Subscribe to new messages
-        if (!supabase) return
-
         const channel = supabase
             .channel('chat_room')
             .on('postgres_changes', {
@@ -70,30 +59,27 @@ export default function ChatPage() {
             })
             .subscribe()
 
-        // Cleanup
         return () => {
             supabase?.removeChannel(channel)
         }
     }, [])
 
-    // Auto-scroll to bottom
+    // Auto-scroll logic
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-    }, [messages, showSelection])
-
-    const handleSelectProfile = (profile: typeof profiles[0]) => {
-        localStorage.setItem("user_profile", JSON.stringify(profile))
-        setUserName(profile.name)
-        setShowSelection(false)
-    }
+    }, [messages])
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (!newMessage.trim() || !supabase) return
+        if (!newMessage.trim() || !supabase || !user) return
 
         const { error } = await supabase
             .from('messages')
-            .insert({ user_name: userName, content: newMessage })
+            .insert({
+                user_name: user.name,
+                content: newMessage,
+                profile_id: user.id
+            })
 
         if (error) {
             console.error('Error sending message:', error)
@@ -102,61 +88,8 @@ export default function ChatPage() {
         }
     }
 
-    if (isLoading) {
-        return <div className="min-h-screen bg-[#F5F5F7]" />
-    }
+    if (!user) return <div className="min-h-screen bg-[#F5F5F7]" />
 
-    // Profile Selection Screen
-    if (showSelection) {
-        return (
-            <div className="min-h-screen bg-[#F7F3F2] flex flex-col items-center justify-center p-6 relative overflow-hidden pb-24">
-                {/* Background Image */}
-                {/* Background Image */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] z-0 pointer-events-none">
-                    <Image
-                        src="/profiles/selection_bg.png"
-                        alt="Background"
-                        fill
-                        className="object-contain"
-                        priority
-                    />
-                </div>
-
-                <div className="text-center mb-12 relative z-10">
-                    <h1 className="text-[24px] font-bold text-[#1D1D1F] leading-tight whitespace-pre-line">
-                        채팅에 참여할{"\n"}
-                        프로필을 선택하세요
-                    </h1>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 w-full max-w-[340px] relative z-10">
-                    {profiles.map((profile) => (
-                        <button
-                            key={profile.id}
-                            onClick={() => handleSelectProfile(profile)}
-                            className="bg-white rounded-[24px] p-6 flex flex-col items-center justify-center gap-4 shadow-sm hover:shadow-md transition-all active:scale-95 aspect-square"
-                        >
-                            <div className="relative w-24 h-24 rounded-full overflow-hidden bg-gray-100">
-                                <Image
-                                    src={profile.image}
-                                    alt={profile.name}
-                                    fill
-                                    className="object-cover"
-                                    sizes="96px"
-                                    priority
-                                />
-                            </div>
-                            <span className="text-[17px] font-bold text-[#1D1D1F]">
-                                {profile.name}
-                            </span>
-                        </button>
-                    ))}
-                </div>
-            </div>
-        )
-    }
-
-    // Chat Interface
     return (
         <div className="flex flex-col h-screen bg-[#F5F5F7]">
             <header className="bg-[#F5F5F7]/95 backdrop-blur px-6 py-4 sticky top-0 z-10 flex items-center justify-between border-b border-gray-100/50">
@@ -172,9 +105,11 @@ export default function ChatPage() {
                         <p className="text-xs text-gray-400 font-medium">여행에 대해 얘기를 나눠요</p>
                     </div>
                 </div>
-                <div className="bg-white px-3 py-1.5 rounded-full border shadow-sm text-xs font-semibold text-gray-600 flex items-center">
-                    <div className="w-2 h-2 rounded-full bg-green-400 mr-1.5 animate-pulse" />
-                    {userName}
+                <div className="bg-white px-3 py-1.5 rounded-full border shadow-sm text-xs font-semibold text-gray-600 flex items-center gap-2">
+                    <div className="relative w-5 h-5 rounded-full overflow-hidden bg-gray-100">
+                        <Image src={user.image_url} alt={user.name} fill className="object-cover" />
+                    </div>
+                    {user.name}
                 </div>
             </header>
 
@@ -186,7 +121,7 @@ export default function ChatPage() {
                     </div>
                 )}
                 {messages.map((msg, index) => {
-                    const isMe = msg.user_name === userName
+                    const isMe = msg.profile_id === user.id || msg.user_name === user.name
                     const showAvatar = index === 0 || messages[index - 1].user_name !== msg.user_name
 
                     return (
@@ -209,9 +144,9 @@ export default function ChatPage() {
             </div>
 
             <div className="fixed bottom-6 left-0 right-0 px-4">
-                <form onSubmit={handleSendMessage} className="max-w-md mx-auto relative flex items-center">
+                <form onSubmit={handleSendMessage} className="max-w-md mx-auto flex items-center gap-2">
                     <Input
-                        className="w-full h-14 pl-6 pr-14 rounded-full bg-white shadow-[0_8px_30px_rgb(0,0,0,0.08)] border-none text-base placeholder:text-gray-400 focus-visible:ring-1 focus-visible:ring-primary"
+                        className="flex-1 h-12 pl-5 pr-5 rounded-[24px] bg-white shadow-[0_2px_12px_rgba(0,0,0,0.05)] border-none text-[15px] placeholder:text-gray-400 focus-visible:ring-1 focus-visible:ring-[#FF8D28]"
                         placeholder="메시지를 입력하세요..."
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
@@ -219,9 +154,9 @@ export default function ChatPage() {
                     <Button
                         type="submit"
                         size="icon"
-                        className="absolute right-2 w-10 h-10 rounded-full bg-primary hover:bg-blue-600 text-white shadow-none transition-transform active:scale-95"
+                        className="w-12 h-12 rounded-full bg-[#FF8D28] hover:bg-[#E67819] text-white shadow-sm flex-shrink-0 transition-transform active:scale-95"
                     >
-                        <Send className="w-4 h-4" />
+                        <Send className="w-5 h-5 ml-0.5" />
                     </Button>
                 </form>
             </div>

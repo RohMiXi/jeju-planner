@@ -41,10 +41,8 @@ export default function MapPage() {
                 // Deduplicate by ID to fix potential DB duplication issues
                 const uniqueData = Array.from(new Map(data.map(item => [item.id, item])).values());
 
-                const filtered = uniqueData.filter(item =>
-                    item.option_type === null || item.option_type === 'A'
-                )
-                setSchedules(filtered)
+                // Show all schedules regardless of option type
+                setSchedules(uniqueData)
             }
             setLoading(false)
         }

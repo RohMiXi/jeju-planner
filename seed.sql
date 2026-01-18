@@ -1,34 +1,100 @@
--- Schedules
-DELETE FROM schedules;
-INSERT INTO schedules (day_number, option_type, start_time, end_time, location, purpose, remarks, lat, lng) VALUES
-(1, NULL, '10:30', '11:00', 'SK렌터카 제주지점', '차량대여', NULL, 33.5037519, 126.5013717),
-(1, NULL, '11:00', '12:00', '포크80', '점심식사', '난축맛돈', 33.4862422, 126.4841736),
-(1, NULL, '12:30', '13:30', '커피냅로스터스', '커피 및 휴식', NULL, 33.4891728, 126.4137082),
-(1, NULL, '14:00', '15:00', '한림공원', '산책', NULL, 33.3893900, 126.2402820),
-(1, 'A', '15:00', '16:00', '액티브파크 카트', '카트 체험', NULL, 33.3551, 126.2415),
-(1, 'B', '15:00', '17:00', '액티브파크 카트+클라이밍', '체험', NULL, 33.3551, 126.2415),
-(1, NULL, '17:30', '18:00', '신창풍차해안도로', '일몰 감상', NULL, 33.3425046, 126.1719226),
-(1, NULL, '18:00', '18:30', '미영이네', '고등어 회 포장', '미리 전화 확인 064-792-0077', 33.2177392, 126.2498282),
-(1, NULL, '19:00', '19:30', '소노캄 제주', '체크인 및 식사', NULL, 33.3056141, 126.7919900),
-(2, NULL, '05:30', '06:00', '소노캄 제주', '출발', NULL, 33.3056141, 126.7919900),
-(2, NULL, '06:00', '07:30', '성산일출봉', '일출', '주차장 30분/도보 20분', 33.4626034, 126.9353337),
-(2, NULL, '08:00', '09:00', '해녀특산품판매점', '조식', '해물라면', 33.4606233, 126.9314938),
-(2, NULL, '09:30', '10:00', '소노캄 제주', '휴식/복귀', NULL, 33.3056141, 126.7919900),
-(2, NULL, '10:30', '11:30', '세계술박물관', '관람', '스킵 가능', 33.4357, 126.8776),
-(2, NULL, '12:00', '13:00', '만덕이네', '중식', NULL, 33.3933443, 126.8010888),
-(2, NULL, '13:00', '14:00', '레이트벗 커피', '커피', NULL, 33.4258767, 126.8512570),
-(2, NULL, '14:00', '15:30', '스누피가든', '관람', NULL, 33.4441267, 126.7783154),
-(2, NULL, '16:00', '17:00', '제주레일바이크', '레일바이크', NULL, 33.4643295, 126.8366151),
-(2, NULL, '17:30', '18:30', '섭지코지', '산책', NULL, 33.439184, 126.909092),
-(2, NULL, '19:00', '20:30', '마씸 본점', '석식', '닭도리탕', 33.3833689, 126.8808440),
-(2, NULL, '21:00', '21:30', '소노캄 제주', '숙소 복귀', NULL, 33.3056141, 126.7919900),
-(3, NULL, '09:00', '11:00', '숙소', '기상 및 체크아웃', NULL, 33.3056141, 126.7919900),
-(3, NULL, '12:00', '13:00', '윤옥', '중식', '라멘', 33.4891699, 126.5357469),
-(3, NULL, '13:30', '14:00', 'SK렌터카', '차량 반납', NULL, 33.5037519, 126.5013717);
+-- 0. Ensure Tables Exist (Safety Check)
+create extension if not exists "uuid-ossp";
 
--- Places Pool
+create table if not exists profiles (
+  id uuid primary key default uuid_generate_v4(),
+  name text not null,
+  image_url text,
+  password text default '0000',
+  created_at timestamp with time zone default now()
+);
+
+-- Add profile_id column if it doesn't exist (for existing tables)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'schedules' AND column_name = 'profile_id') THEN
+        ALTER TABLE schedules ADD COLUMN profile_id uuid references profiles(id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'places_pool' AND column_name = 'profile_id') THEN
+        ALTER TABLE places_pool ADD COLUMN profile_id uuid references profiles(id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'messages' AND column_name = 'profile_id') THEN
+        ALTER TABLE messages ADD COLUMN profile_id uuid references profiles(id);
+    END IF;
+END $$;
+
+
+-- 1. Insert Profiles
+INSERT INTO profiles (name, image_url, password) VALUES
+('권용근', '/profiles/1.png', '5404'),
+('노재열', '/profiles/2.png', '4797'),
+('이재훈', '/profiles/3.png', '4350'),
+('이지환', '/profiles/4.png', '4570')
+ON CONFLICT (id) DO NOTHING;
+
+-- 2. Clear Schedules
+DELETE FROM schedules;
+
+-- 3. Insert Schedules (Assigning to 노재열)
+WITH profile_data AS (SELECT id FROM profiles WHERE name = '노재열' LIMIT 1)
+INSERT INTO schedules (day_number, option_type, start_time, end_time, location, purpose, remarks, lat, lng, profile_id)
+SELECT 
+    d.column1::integer, 
+    d.column2::text, 
+    d.column3::time, 
+    d.column4::time, 
+    d.column5::text, 
+    d.column6::text, 
+    d.column7::text, 
+    d.column8::float, 
+    d.column9::float, 
+    p.id 
+FROM (VALUES
+  (1, NULL, '10:30', '11:00', 'SK렌터카 제주지점', '차량대여', NULL, 33.5037519, 126.5013717),
+  (1, NULL, '11:00', '12:00', '포크80', '점심식사', '난축맛돈', 33.4862422, 126.4841736),
+  (1, NULL, '12:30', '13:30', '커피냅로스터스', '커피 및 휴식', NULL, 33.4891728, 126.4137082),
+  (1, NULL, '14:00', '15:00', '한림공원', '산책', NULL, 33.3893900, 126.2402820),
+  (1, 'A', '15:00', '16:00', '액티브파크 카트', '카트 체험', NULL, 33.3551, 126.2415),
+  (1, 'B', '15:00', '17:00', '액티브파크 카트+클라이밍', '체험', NULL, 33.3551, 126.2415),
+  (1, NULL, '17:30', '18:00', '신창풍차해안도로', '일몰 감상', NULL, 33.3425046, 126.1719226),
+  (1, NULL, '18:00', '18:30', '미영이네', '고등어 회 포장', '미리 전화 확인 064-792-0077', 33.2177392, 126.2498282),
+  (1, NULL, '19:00', '19:30', '소노캄 제주', '체크인 및 식사', NULL, 33.3056141, 126.7919900),
+  (2, NULL, '05:30', '06:00', '소노캄 제주', '출발', NULL, 33.3056141, 126.7919900),
+  (2, NULL, '06:00', '07:30', '성산일출봉', '일출', '주차장 30분/도보 20분', 33.4626034, 126.9353337),
+  (2, NULL, '08:00', '09:00', '해녀특산품판매점', '조식', '해물라면', 33.4606233, 126.9314938),
+  (2, NULL, '09:30', '10:00', '소노캄 제주', '휴식/복귀', NULL, 33.3056141, 126.7919900),
+  (2, NULL, '10:30', '11:30', '세계술박물관', '관람', '스킵 가능', 33.4357, 126.8776),
+  (2, NULL, '12:00', '13:00', '만덕이네', '중식', NULL, 33.3933443, 126.8010888),
+  (2, NULL, '13:00', '14:00', '레이트벗 커피', '커피', NULL, 33.4258767, 126.8512570),
+  (2, NULL, '14:00', '15:30', '스누피가든', '관람', NULL, 33.4441267, 126.7783154),
+  (2, NULL, '16:00', '17:00', '제주레일바이크', '레일바이크', NULL, 33.4643295, 126.8366151),
+  (2, NULL, '17:30', '18:30', '섭지코지', '산책', NULL, 33.439184, 126.909092),
+  (2, NULL, '19:00', '20:30', '마씸 본점', '석식', '닭도리탕', 33.3833689, 126.8808440),
+  (2, NULL, '21:00', '21:30', '소노캄 제주', '숙소 복귀', NULL, 33.3056141, 126.7919900),
+  (3, NULL, '09:00', '11:00', '숙소', '기상 및 체크아웃', NULL, 33.3056141, 126.7919900),
+  (3, NULL, '12:00', '13:00', '윤옥', '중식', '라멘', 33.4891699, 126.5357469),
+  (3, NULL, '13:30', '14:00', 'SK렌터카', '차량 반납', NULL, 33.5037519, 126.5013717)
+) as d 
+CROSS JOIN profile_data p;
+
+-- 4. Places Pool
 DELETE FROM places_pool;
-INSERT INTO places_pool (category, name) VALUES
-('식당', '지은이네밥상'), ('식당', '선흘곶'), ('식당', '미영이네'), ('식당', '명진전복'), ('식당', '고집돌우럭'), ('식당', '황금뱃지'), ('식당', '원담'), ('식당', '맛나식당'), ('식당', '포크80'), ('식당', '보름숲'), ('식당', '도민상회'), ('식당', '송림반점'), ('식당', '도두반점'), ('식당', '도주제'), ('식당', '윤옥'), ('식당', '토모'), ('식당', '식당 마요네즈'), ('식당', '더웨이팅'), ('식당', '로빙화'), ('식당', '리보스코'), ('식당', '취향의섬'), ('식당', '마초그릴'), ('식당', '이누팬'), ('식당', '캐럿버거'), ('식당', '판타스틱 버거'),
-('카페', '카페성지'), ('카페', '커피파인더'), ('카페', '커피템플'), ('카페', '하토우 커피'), ('카페', '커피냅로스터스'), ('카페', '듀포레'), ('카페', '콜로세움'), ('카페', '카페진정성'), ('카페', '빽다방베이커리'), ('카페', '오설록 티뮤지엄'), ('카페', '르바게트'),
-('방문지', '허브동산'), ('방문지', '휴애리'), ('방문지', '성산일출봉'), ('방문지', '섭지코지'), ('방문지', '카멜리아힐'), ('방문지', '스누피가든'), ('방문지', '신창풍차해안도로'), ('방문지', '한림공원'), ('방문지', '한라산소주공장'), ('방문지', '제주맥주양조장'), ('방문지', '액티브파크');
+WITH profile_data AS (SELECT id FROM profiles WHERE name = '노재열' LIMIT 1)
+INSERT INTO places_pool (category, name, profile_id)
+SELECT d.*, p.id FROM (VALUES
+  ('식당', '지은이네밥상'), ('식당', '선흘곶'), ('식당', '미영이네'), ('식당', '명진전복'), ('식당', '고집돌우럭'), ('식당', '황금뱃지'), ('식당', '원담'), ('식당', '맛나식당'), ('식당', '포크80'), ('식당', '보름숲'), ('식당', '도민상회'), ('식당', '송림반점'), ('식당', '도두반점'), ('식당', '도주제'), ('식당', '윤옥'), ('식당', '토모'), ('식당', '식당 마요네즈'), ('식당', '더웨이팅'), ('식당', '로빙화'), ('식당', '리보스코'), ('식당', '취향의섬'), ('식당', '마초그릴'), ('식당', '이누팬'), ('식당', '캐럿버거'), ('식당', '판타스틱 버거'),
+  ('카페', '카페성지'), ('카페', '커피파인더'), ('카페', '커피템플'), ('카페', '하토우 커피'), ('카페', '커피냅로스터스'), ('카페', '듀포레'), ('카페', '콜로세움'), ('카페', '카페진정성'), ('카페', '빽다방베이커리'), ('카페', '오설록 티뮤지엄'), ('카페', '르바게트'),
+  ('방문지', '허브동산'), ('방문지', '휴애리'), ('방문지', '성산일출봉'), ('방문지', '섭지코지'), ('방문지', '카멜리아힐'), ('방문지', '스누피가든'), ('방문지', '신창풍차해안도로'), ('방문지', '한림공원'), ('방문지', '한라산소주공장'), ('방문지', '제주맥주양조장'), ('방문지', '액티브파크')
+) as d (category, name)
+CROSS JOIN profile_data p;
+
+-- 5. Fix any existing messages
+DO $$
+DECLARE
+    target_profile_id uuid;
+BEGIN
+    SELECT id INTO target_profile_id FROM profiles WHERE name = '노재열' LIMIT 1;
+    IF target_profile_id IS NOT NULL THEN
+        UPDATE messages SET profile_id = target_profile_id WHERE profile_id IS NULL;
+    END IF;
+END $$;

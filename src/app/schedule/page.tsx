@@ -1,12 +1,15 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { ScheduleItem } from "@/components/schedule-item"
 import { supabase, Schedule } from "@/lib/supabase"
-import { Loader2 } from "lucide-react"
+import { Loader2, Plus } from "lucide-react"
+import { ScheduleDetailDrawer } from "@/components/schedule-detail-drawer"
+import { AddScheduleDrawer } from "@/components/add-schedule-drawer"
 
 export default function SchedulePage() {
     const [day, setDay] = useState(1)
@@ -14,41 +17,68 @@ export default function SchedulePage() {
     const [schedules, setSchedules] = useState<Schedule[]>([])
     const [loading, setLoading] = useState(true)
 
+    // Detail View State
+    const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null)
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+    const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null)
+
+    // 1. Fetch User Location
     useEffect(() => {
-        async function fetchSchedules() {
-            setLoading(true)
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    setCurrentLocation({
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    })
+                },
+                (error) => {
+                    console.error("Error getting location:", error)
+                }
+            )
+        }
+    }, [])
 
-            if (!supabase) {
-                // Mock data if Supabase is not connected
-                console.log("Using mock data")
-                setSchedules([])
-                setLoading(false)
-                return
-            }
+    const router = useRouter()
 
-            let query = supabase
-                .from('schedules')
-                .select('*')
-                .eq('day_number', day)
-                .order('start_time', { ascending: true })
+    // Lift fetchSchedules to be reusable
+    async function fetchSchedules() {
+        setLoading(true)
 
-            const { data, error } = await query
-
-            if (error) {
-                console.error('Error fetching schedules:', error)
-            } else {
-                // Filter options in memory for simplicity or add complicated OR logic
-                // We only want items where option_type is NULL OR option_type matches current selection
-                const filtered = data.filter(item =>
-                    item.option_type === null || item.option_type === optionType
-                )
-                setSchedules(filtered)
-            }
+        if (!supabase) {
+            console.log("Using mock data")
+            setSchedules([])
             setLoading(false)
+            return
         }
 
+        let query = supabase
+            .from('schedules')
+            .select('*, profiles(name)')
+            .eq('day_number', day)
+            .order('start_time', { ascending: true })
+
+        const { data, error } = await query
+
+        if (error) {
+            console.error('Error fetching schedules:', error)
+        } else {
+            const filtered = data.filter(item =>
+                item.option_type === null || item.option_type === optionType
+            )
+            setSchedules(filtered)
+        }
+        setLoading(false)
+    }
+
+    useEffect(() => {
         fetchSchedules()
     }, [day, optionType])
+
+    const handleItemClick = (schedule: Schedule) => {
+        setSelectedSchedule(schedule)
+        setIsDrawerOpen(true)
+    }
 
     return (
         <div className="flex flex-col min-h-screen bg-[#F7F3F2] relative overflow-hidden">
@@ -67,6 +97,12 @@ export default function SchedulePage() {
                     <h1 className="text-[32px] font-bold tracking-tight text-[#1D1D1F]">
                         여행 일정
                     </h1>
+                    <button
+                        onClick={() => router.push('/schedule/add')}
+                        className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center shadow-sm hover:bg-white active:scale-95 transition-all"
+                    >
+                        <Plus className="w-6 h-6 text-[#1D1D1F]" />
+                    </button>
                 </div>
 
                 {/* Day Selector (Tabs Style) */}
@@ -96,7 +132,9 @@ export default function SchedulePage() {
                 ) : schedules.length > 0 ? (
                     <div className="space-y-4 px-1">
                         {schedules.map((schedule, index) => (
-                            <ScheduleItem key={schedule.id} schedule={schedule} index={index} />
+                            <div key={schedule.id} onClick={() => handleItemClick(schedule)} className="cursor-pointer transition-transform active:scale-[0.98]">
+                                <ScheduleItem schedule={schedule} index={index} />
+                            </div>
                         ))}
                     </div>
                 ) : (
@@ -106,6 +144,14 @@ export default function SchedulePage() {
                     </div>
                 )}
             </main>
+
+            {/* Detail Drawer */}
+            <ScheduleDetailDrawer
+                isOpen={isDrawerOpen}
+                onClose={() => setIsDrawerOpen(false)}
+                schedule={selectedSchedule}
+                currentLocation={currentLocation}
+            />
         </div>
     )
 }

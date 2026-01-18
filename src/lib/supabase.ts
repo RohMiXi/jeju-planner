@@ -15,7 +15,7 @@ export const supabase = isMock ? null : createClient(supabaseUrl, supabaseAnonKe
 
 // Types for our database
 export type Schedule = {
-    id: number
+    id: string
     day_number: number
     option_type: 'A' | 'B' | null
     start_time: string
@@ -25,15 +25,18 @@ export type Schedule = {
     remarks: string | null
     lat: number | null
     lng: number | null
+    profile_id?: string
 }
 
 export type Place = {
     id: string
+    created_at: string
     category: string
     sub_category: string | null
     name: string
     naver_map_url: string | null
     description: string | null
+    profile_id?: string
 }
 
 export type Message = {
@@ -41,4 +44,5 @@ export type Message = {
     user_name: string
     content: string
     created_at: string
+    profile_id?: string | null
 }

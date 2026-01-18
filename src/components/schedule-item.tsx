@@ -40,8 +40,15 @@ export function ScheduleItem({ schedule, index, isActive, isPrimary }: ScheduleI
                         {/* Title & Subtitle Group */}
                         <div className="flex flex-col gap-2">
                             {/* Title */}
-                            <h3 className="text-[17px] font-bold text-[#1D1D1F] leading-tight">
-                                {schedule.location}
+                            <h3 className="text-[17px] font-bold text-[#1D1D1F] leading-tight flex items-center justify-between">
+                                <span>{schedule.location}</span>
+                                {/* @ts-ignore - joined payload */}
+                                {schedule.profiles?.name && (
+                                    <span className="text-[10px] text-gray-400 font-normal bg-gray-100 px-1.5 py-0.5 rounded-sm">
+                                        {/* @ts-ignore */}
+                                        {schedule.profiles.name}
+                                    </span>
+                                )}
                             </h3>
 
                             {/* Purpose / Subtitle */}

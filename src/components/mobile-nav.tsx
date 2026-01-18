@@ -8,8 +8,8 @@ import { cn } from "@/lib/utils"
 export function MobileNav() {
     const pathname = usePathname()
 
-    // Hide on profile selection screen or chat screen
-    if (pathname === "/" || pathname === "/chat") return null
+    // Hide on profile selection screen or chat screen or login screen
+    if (pathname === "/" || pathname === "/chat" || pathname === "/login") return null
 
     const links = [
         { href: "/schedule", label: "일정", icon: Calendar },

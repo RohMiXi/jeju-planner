@@ -25,9 +25,14 @@ export async function GET(request: NextRequest) {
         );
     }
 
-    // Naver Application Maps Direction 15 API Reference
-    // CONFIRMED WORKING ENDPOINT for New Application Maps Key:
-    const baseUrl = "https://maps.apigw.ntruss.com/map-direction-15/v1/driving";
+    // Naver Maps API Endpoints
+    // Direction 5: Standard Driving (Start -> Goal) - https://api.ncloud-docs.com/docs/application-maps-directions5
+    const baseUrl5 = "https://maps.apigw.ntruss.com/map-direction/v1/driving";
+
+    // Direction 15: Standard Driving with Waypoints - https://api.ncloud-docs.com/docs/application-maps-directions15
+    const baseUrl15 = "https://maps.apigw.ntruss.com/map-direction-15/v1/driving";
+
+    let baseUrl = baseUrl5; // Default to Direction 5 for simple routes
 
     const params = new URLSearchParams({
         start: start,
@@ -35,7 +40,8 @@ export async function GET(request: NextRequest) {
         option: "traoptimal"
     });
 
-    if (waypoints) {
+    if (waypoints && waypoints.trim().length > 0) {
+        baseUrl = baseUrl15; // Switch to Direction 15 for multi-point routes
         params.append("waypoints", waypoints);
     }
 
