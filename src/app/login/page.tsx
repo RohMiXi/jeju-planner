@@ -105,11 +105,11 @@ export default function LoginPage() {
     // Step 1: Select Profile
     if (step === "SELECT") {
         return (
-            <div className="min-h-screen bg-[#F7F3F2] flex flex-col items-center justify-end p-6 relative overflow-hidden pb-16">
+            <div className="h-[100dvh] bg-[#F7F3F2] flex flex-col items-center justify-end p-6 relative overflow-hidden pb-12">
                 {/* Top Island Background */}
                 <div className="absolute top-0 left-0 right-0 h-[60vh] z-0 pointer-events-none">
                     <Image
-                        src="/login-bg-island.png"
+                        src="/login-bg-island_v2.png"
                         alt="Island Background"
                         fill
                         className="object-cover object-top"
@@ -118,9 +118,9 @@ export default function LoginPage() {
                 </div>
 
                 {/* Orange Circular Background */}
-                <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-[600px] h-[600px] z-0 pointer-events-none">
+                <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-[calc(100%-48px)] max-w-[420px] aspect-square z-0 pointer-events-none">
                     <Image
-                        src="/profiles/selection_bg.png"
+                        src="/profiles/selection_bg_v2.png"
                         alt="Background Pattern"
                         fill
                         className="object-contain"
@@ -135,12 +135,12 @@ export default function LoginPage() {
                     </h1>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 w-full max-w-[340px] relative z-10">
+                <div className="grid grid-cols-2 gap-4 w-full relative z-10">
                     {profiles.map((profile) => (
                         <button
                             key={profile.id}
                             onClick={() => handleProfileClick(profile)}
-                            className="bg-white rounded-[24px] p-6 flex flex-col items-center justify-center gap-4 shadow-sm hover:shadow-md transition-all active:scale-95 aspect-square"
+                            className="bg-white rounded-[24px] py-2 flex flex-col items-center justify-center gap-4 shadow-sm hover:shadow-md transition-all active:scale-95"
                         >
                             <div className="relative w-24 h-24 rounded-full overflow-hidden bg-gray-100 ring-4 ring-transparent hover:ring-[#FF8D28]/20 transition-all">
                                 <Image
@@ -177,7 +177,7 @@ export default function LoginPage() {
                 {/* Orange Circular Background */}
                 <div className="absolute top-[62%] left-1/2 -translate-x-1/2 -translate-y-1/3 w-[600px] h-[600px] z-0 pointer-events-none">
                     <Image
-                        src="/profiles/selection_bg.png"
+                        src="/profiles/selection_bg_v2.png"
                         alt="Background Pattern"
                         fill
                         className="object-contain opacity-90 scale-y-[-1]"
