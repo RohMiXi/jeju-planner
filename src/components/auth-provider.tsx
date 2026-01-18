@@ -18,6 +18,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+const AUTH_VERSION = "v2-refresh" // Change this string to force global logout
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<Profile | null>(null)
     const [isLoading, setIsLoading] = useState(true)
@@ -25,8 +27,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
 
     useEffect(() => {
+        const savedVersion = localStorage.getItem("auth_version")
         const savedProfile = localStorage.getItem("user_profile")
-        if (savedProfile) {
+
+        // If version doesn't match, or no version exists -> Clear Query
+        if (savedVersion !== AUTH_VERSION) {
+            localStorage.removeItem("user_profile")
+            localStorage.setItem("auth_version", AUTH_VERSION)
+            setUser(null)
+        } else if (savedProfile) {
             setUser(JSON.parse(savedProfile))
         }
         setIsLoading(false)
@@ -42,6 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const login = (profile: Profile) => {
         localStorage.setItem("user_profile", JSON.stringify(profile))
+        localStorage.setItem("auth_version", AUTH_VERSION)
         setUser(profile)
         router.push("/")
     }
