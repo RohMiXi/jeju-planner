@@ -41,7 +41,7 @@ export default function NaverMap({ center, markers = [], path = [] }: MapProps) 
                 scaleControl: false,
                 logoControl: false,
                 mapDataControl: false,
-                zoomControl: true
+                zoomControl: false
             }
 
             const map = new window.naver.maps.Map(mapElement.current, mapOptions)
@@ -129,7 +129,7 @@ export default function NaverMap({ center, markers = [], path = [] }: MapProps) 
                 referrerPolicy="origin"
                 onReady={() => setLoaded(true)}
             />
-            <div ref={mapElement} className="w-full h-full min-h-[400px] rounded-lg bg-gray-100 relative">
+            <div ref={mapElement} className="w-full h-full min-h-[400px] rounded-lg bg-gray-100 relative touch-none">
                 {!loaded && (
                     <div className="absolute inset-0 flex items-center justify-center">
                         <Loader2 className="animate-spin text-gray-400" />
