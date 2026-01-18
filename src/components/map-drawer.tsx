@@ -19,8 +19,8 @@ export function MapDrawer({ schedules, selectedId, onItemClick }: MapDrawerProps
     return (
         <Drawer.Root shouldScaleBackground>
             <Drawer.Trigger asChild>
-                <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 cursor-pointer">
-                    <button className="bg-white text-black px-6 py-3 rounded-full shadow-lg font-semibold flex items-center gap-2 hover:bg-gray-50 transition-colors">
+                <div className="absolute bottom-28 left-1/2 -translate-x-1/2 z-20 cursor-pointer">
+                    <button className="bg-white text-black px-6 py-3 rounded-full shadow-lg font-semibold flex items-center gap-2 hover:bg-gray-50 transition-colors whitespace-nowrap">
                         <ChevronUp className="w-4 h-4" />
                         일정 목록 보기 ({schedules.length})
                     </button>
